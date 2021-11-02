@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -35,6 +36,15 @@ func main() {
 		"/api/private",
 		auth.EnsureToken(),
 		func(ctx *gin.Context) {
+			claims := ctx.Request.Context().Value(jwtmiddleware.ContextKey{}).(*auth.CustomClaims)
+
+			if !claims.HasScope("read:messages") {
+				response := map[string]string{"message": "Insufficient Scope"}
+
+				ctx.JSON(http.StatusForbidden, response)
+				return
+			}
+
 			response := map[string]string{
 				"message": "hello from my private protected endpoints",
 			}
